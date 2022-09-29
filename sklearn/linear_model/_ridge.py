@@ -14,6 +14,7 @@ from functools import partial
 from numbers import Integral, Real
 import warnings
 
+import dask.array as da
 import numpy as np
 import numbers
 from scipy import linalg
@@ -287,7 +288,7 @@ def _solve_cholesky_kernel(K, y, alpha, sample_weight=None, copy=False):
 
 
 def _solve_svd(X, y, alpha):
-    U, s, Vt = linalg.svd(X, full_matrices=False)
+    U, s, Vt = da.linalg.svd(da.from_array(X))
     idx = s > 1e-15  # same default value as scipy.linalg.pinv
     s_nnz = s[idx][:, np.newaxis]
     UTy = np.dot(U.T, y)
