@@ -12,9 +12,12 @@ Ridge regression
 from abc import ABCMeta, abstractmethod
 from functools import partial
 from numbers import Integral, Real
+import os
+import os.path
 import warnings
 
 import dask.array as da
+from dask.distributed import Client
 import numpy as np
 import numbers
 from scipy import linalg
@@ -288,7 +291,10 @@ def _solve_cholesky_kernel(K, y, alpha, sample_weight=None, copy=False):
 
 
 def _solve_svd(X, y, alpha):
-    U, s, Vt = da.linalg.svd(da.from_array(X))
+    client = Client(
+        scheduler_file=os.path.join(os.expanduser("~"), ".dask-scheduler.json")
+    )
+    U, s, Vt = da.linalg.svd(da.from_array(X)).compute()
     idx = s > 1e-15  # same default value as scipy.linalg.pinv
     s_nnz = s[idx][:, np.newaxis]
     UTy = np.dot(U.T, y)
@@ -568,7 +574,6 @@ def _ridge_regression(
     check_input=True,
     fit_intercept=False,
 ):
-
     has_sw = sample_weight is not None
 
     if solver == "auto":
@@ -778,7 +783,6 @@ def _ridge_regression(
 
 
 class _BaseRidge(LinearModel, metaclass=ABCMeta):
-
     _parameter_constraints: dict = {
         "alpha": [Interval(Real, 0, None, closed="left"), np.ndarray],
         "fit_intercept": ["boolean"],
@@ -820,7 +824,6 @@ class _BaseRidge(LinearModel, metaclass=ABCMeta):
         self.random_state = random_state
 
     def fit(self, X, y, sample_weight=None):
-
         self._normalize = _deprecate_normalize(
             self.normalize, default=False, estimator_name=self.__class__.__name__
         )
@@ -2101,7 +2104,6 @@ class _RidgeGCV(LinearModel):
 
 
 class _BaseRidgeCV(LinearModel):
-
     _parameter_constraints: dict = {
         "alphas": ["array-like", Interval(Real, 0, None, closed="neither")],
         "fit_intercept": ["boolean"],
