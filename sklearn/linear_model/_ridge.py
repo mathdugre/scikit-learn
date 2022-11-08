@@ -292,7 +292,11 @@ def _solve_cholesky_kernel(K, y, alpha, sample_weight=None, copy=False):
 
 def _solve_svd(X, y, alpha):
     client = Client(
-        scheduler_file=os.path.join(os.expanduser("~"), ".dask-scheduler.json")
+        os.getenv("DASK_SCHEDULER_ADDRESS", None)
+    )
+    print(
+            "[INFO] scikit-learn dask client conneted to scheduler:",
+              client.scheduler.address
     )
     U, s, Vt = da.linalg.svd(da.from_array(X)).compute()
     idx = s > 1e-15  # same default value as scipy.linalg.pinv
